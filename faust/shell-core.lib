@@ -1,4 +1,4 @@
-declare name "shell-osc";
+declare name "shell-core";
 declare author "Alexandre BIQUE";
 declare copyright "Alexandre BIQUE";
 declare version "1.0";
@@ -7,3 +7,5 @@ declare license "MIT";
 SR = min(192000, max(1, fconstant(int fSamplingFreq, <math.h>)));
 
 SHELL_PI = 3.1415926535897932384626433832795028841971693993751058209749445923078164062862089986280348253421170679;
+
+shell_time = (+(1) ~ _) - 1;

@@ -1,0 +1,8 @@
+declare name "shell-fm";
+declare author "Alexandre BIQUE";
+declare copyright "Alexandre BIQUE";
+declare version "1.0";
+declare license "MIT";
+
+shell_fm_linear(x, x0, x1, y0, y1) = y0 + (y1 - y0) * (x - x0) / (x1 - x0);
+shell_fm_exp(x, x0, x1, y0, y1, ntau) = y0 + (y1 - y0) * (exp(ntau * (x0 - x) / (x1 - x0)));

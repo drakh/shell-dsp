@@ -1,0 +1,7 @@
+declare name "shell-env";
+declare author "Alexandre BIQUE";
+declare copyright "Alexandre BIQUE";
+declare version "1.0";
+declare license "MIT";
+
+shell_env_exp(t, tau) = exp(-t / tau);

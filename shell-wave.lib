@@ -1,0 +1,14 @@
+declare name "shell-wave";
+declare author "Alexandre BIQUE";
+declare copyright "Alexandre BIQUE";
+declare version "1.0";
+declare license "MIT";
+
+import("shell-core.lib");
+
+shell_osc(t, f) = sin(t * f * 2 * SHELL_PI / SR);
+shell_square(t, f, ratio, y0, y1) = value with {
+    period = int(SR / f);
+    part = select2(period == 0, int(t) % period >= ratio * period, 0);
+    value = select2(part, y0, y1);
+};

@@ -1,10 +1,10 @@
-FAUST_PREFIX = /usr
-#FAUST_PREFIX = ${HOME}/local/faust/
+#FAUST_PREFIX = /usr
+FAUST_PREFIX = ${HOME}/local/faust
 FAUST_BIN = $(FAUST_PREFIX)/bin
 FAUST_FLAGS = -quad
 
 LIBS = shell-env.lib shell-core.lib shell-wave.lib shell-fm.lib
-TARGETS = kicker-sin-exp kicker-square-exp
+TARGETS = kicker-sin-exp kicker-square-exp kicker-saw-exp
 
 all: $(TARGETS)
 

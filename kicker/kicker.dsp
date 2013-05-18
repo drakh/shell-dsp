@@ -20,7 +20,7 @@ t = (+(1) ~ _ * gate);
 // 0: osci
 // 1: saw1
 waver_select = nentry("waver", 0, 0, 1, 1);
-waver(f) = select2(waver_select, osci(f), saw1(f));
+waver(f) = select2(waver_select, sin(f * t * 2 * PI / SR), saw1(f));
 
 linear_variator(x, x0, x1, y0, y1) = y0 + (y1 - y0) * (x - x0) / (x1 - x0);
 tau = nentry("tau", 5, 1, 10, 1);
@@ -29,7 +29,9 @@ variator_select = nentry("variator", 1, 0, 1, 1);
 variator(x, x0, x1, y0, y1) = select2(variator_select,
                                       linear_variator(x, x0, x1, y0, y1),
                                       exp_variator(x, x0, x1, y0, y1));
+gain = exp(-5 * 1000 * t / (SR * duration));
 
-kicker = waver(variator(t, 0, SR * duration / 1000, f1, f2)) * gate * (1000 * t / SR < duration);
+kicker = select2(gate, 0,
+           waver(variator(t, 0, SR * duration / 1000, f1, f2)) * gain);
 
 process = kicker;

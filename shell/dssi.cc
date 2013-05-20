@@ -7,12 +7,15 @@
 
 namespace shell
 {
+  static uint32_t g_unique_id = 19042;
+
+  template <typename float_type>
   class DssiDescriptor
   {
   public:
-    DssiDescriptor(Dsp * dsp)
+    DssiDescriptor(Dsp<float_type> * dsp)
     {
-      ladspa_desc_.UniqueId = unique_id_++;
+      ladspa_desc_.UniqueID = g_unique_id++;
       ladspa_desc_.Label = strdup(dsp_->name().c_str());
       ladspa_desc_.Properties = 0;
       ladspa_desc_.Name = strdup(dsp_->name().c_str());
@@ -21,21 +24,21 @@ namespace shell
       ladspa_desc_.PortCount = dsp_->nInputs() + dsp_->nOutputs();// + dsp_->params().size();
       port_descriptors_.resize(ladspa_desc_.PortCount);
       port_names_.resize(ladspa_desc_.PortCount);
-      port_port_range_hint_.resize(ladspa_desc_.PortCount);
+      port_range_hint_.resize(ladspa_desc_.PortCount);
       for (int i = 0; i < dsp_->nInputs(); ++i) {
       }
       for (int i = 0; i < dsp_->nOutputs(); ++i) {
       }
       // for (int i = 0; i < dsp_->params().size(); ++i) {
       // }
-      ladspa_desc_.PortDescriptors = &port_descritpors_[0];
+      ladspa_desc_.PortDescriptors = &port_descriptors_[0];
       ladspa_desc_.instantiate = &DssiDescriptor::clone;
       ladspa_desc_.connect_port = nullptr;
       ladspa_desc_.run = nullptr;
       ladspa_desc_.run_adding = nullptr;
 
       dssi_desc_.DSSI_API_Version = 1;
-      dssi_desc_.LADSPA_PLugin = &ladspa_desc_;
+      dssi_desc_.LADSPA_Plugin = &ladspa_desc_;
       dssi_desc_.configure = nullptr;
       dssi_desc_.get_program = nullptr;
       dssi_desc_.select_program = nullptr;
@@ -53,24 +56,23 @@ namespace shell
     }
 
     /* dssi stuff */
-    DSSI_Descriptor *dssiDescriptor() const
+    const DSSI_Descriptor *dssiDescriptor() const
     {
       return &dssi_desc_;
     }
 
-    static LADSPA_Handle *clone(LADSPA_Hanle handle, unsigned long sample_rate)
+    static LADSPA_Handle clone(LADSPA_Descriptor *ptr, unsigned long sample_rate)
     {
-      DssiDescriptor *desc = handle;
-      Dsp *dsp = handle->dsp_->clone(sample_rate);
+      DssiDescriptor<float_type> *desc =
+        reinterpret_cast<DssiDescriptor<float_type> *>(ptr->ImplementationData);
+      Dsp<float_type> *dsp = desc->dsp_->clone(sample_rate);
       if (!dsp)
         return nullptr;
-      return new DssiDescriptor(dsp);
+      return new DssiDescriptor<float_type>(dsp);
     }
 
   private:
-    static uint32_t unique_id_ = 19042;
-
-    Dsp                               *dsp_;
+    Dsp<float_type>                   *dsp_;
     std::vector<LADSPA_PortDescriptor> port_descriptors_;
     std::vector<const char *>          port_names_;
     std::vector<LADSPA_PortRangeHint>  port_range_hint_;
@@ -79,46 +81,11 @@ namespace shell
   };
 }
 
-// static char *dssi_configure(LADSPA_Handle  ctx,
-//                             const char    *key,
-//                             const char    *value)
-// {
-//   return nullptr;
-// }
-
-static 
-
-static const LADSPA_Descriptor g_ladspa_descriptors[] = {
-  {
-    19042, // UniqueID
-    "shell-kicker", // Label
-    {}, // properties
-    "Shell Kicker", // Name
-    "Alexandre BIQUE", // Maker
-    "None", // Copyright
-    0, // PortCount
-    {}, // PortDescriptors
-    {}, // PortNames
-    {}, // PortRangesHints
-    NULL, // ImplementationData
-    NULL, // instantiate
-    
-  },
-};
-
-// static const DSSI_Descriptor g_dssi_descriptors[] = {
-//   {
-//     1, // api version
-//     g_ladspa_descriptors + 0,
-    
-//   },
-// };
-
 const DSSI_Descriptor *dssi_descriptor(unsigned long index)
 {
-  static std::vector<shell::Dssi> plugins;
+  static std::vector<shell::DssiDescriptor<long double> > plugins;
 
   if (index < plugins.size())
-    return plugins[i].dssiDescriptor();
+    return plugins[index].dssiDescriptor();
   return nullptr;
 }

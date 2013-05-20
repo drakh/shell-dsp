@@ -23,4 +23,6 @@ fm  = shell_fm_exp(t, 0, duration * SR / 1000, f1, f2, 5);
 osc = shell_osc(t, fm);
 env = shell_env_exp(t, duration * SR / 1000 / 5);
 
-process = select2(gate, 0, osc * env);
+out = select2(gate, 0, osc * env) * gain / 100 + 0 * freq;
+
+process = out, out;

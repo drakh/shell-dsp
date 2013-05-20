@@ -35,12 +35,17 @@ namespace shell
       // params_.push_back(Param("duration", "duration (ms)", &duration_));
     }
 
+    virtual Dsp<float_type> *clone(uint32_t sample_rate) override
+    {
+      return new Kicker<float_type>(sample_rate);
+    }
+
     void start()
     {
       step_ = 0;
     }
 
-    inline float_type process()
+    inline float_type processStep()
     {
       if (step_ > duration_)
         return 0;
@@ -55,12 +60,12 @@ namespace shell
       return wave * shape;
     }
 
-    virtual void process(float **inputs,
-                         float **outputs,
-                         uint32_t nframes)
+    virtual void process(float_type **inputs,
+                         float_type **outputs,
+                         uint32_t     nframes) override
     {
       for (uint32_t i = 0; i < nframes; ++i)
-        outputs[0][i] = process();
+        outputs[0][i] = processStep();
     }
 
   private:

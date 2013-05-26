@@ -4,7 +4,7 @@ FAUST_BIN = $(FAUST_PREFIX)/bin
 FAUST_FLAGS = -quad
 
 LIBS = shell-env.lib shell-core.lib shell-wave.lib shell-fm.lib
-TARGETS = kicker-sin-exp kicker-square-exp kicker-saw-exp saw square
+TARGETS = kicker1 osc1
 
 all: $(TARGETS)
 

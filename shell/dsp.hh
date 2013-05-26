@@ -2,20 +2,21 @@
 # define SHELL_DSP_HH
 
 # include <vector>
+# include <string>
 
 # include "context.hh"
-# include "param.hh"
+# include "event.hh"
+# include "non-copyable.hh"
 
 namespace shell
 {
   template <typename float_type>
-  class Dsp : public Context<float_type>
+  class Dsp : public Context<float_type>,
+              public NonCopyable
   {
   public:
     Dsp(uint32_t sample_rate)
-      : Context<float_type>(sample_rate),
-        ninputs_(0),
-        noutputs_(0)
+      : Context<float_type>(sample_rate)
     {
     }
 
@@ -23,22 +24,35 @@ namespace shell
 
     virtual Dsp<float_type> *clone(uint32_t sample_rate) const = 0;
 
-    virtual void process(float_type **inputs,
-                         float_type **outputs,
-                         uint32_t     nframes) = 0;
+    virtual std::string author() const { return "None"; }
+    virtual std::string name() const { return "Unnamed"; }
+    virtual std::string desc() const { return ""; }
 
-    uint32_t nInputs() const { return ninputs_; }
-    uint32_t nOutputs() const { return noutputs_; }
-    const std::vector<Param<float_type> > params() const { return params_; };
-    const std::string & name() const { return name_; }
-    const std::string & author() const { return author_; }
+    virtual uint32_t inputCount() const = 0;
+    virtual uint32_t outputCount() const = 0;
 
-  protected:
-    uint32_t    ninputs_;
-    uint32_t    noutputs_;
-    std::string name_;
-    std::string author_;
-    std::vector<Param<float_type> > params_;
+    enum ScaleType {
+      kScaleLinear,
+      kScaleLog,
+    };
+
+    // Parameters stuff
+    virtual float paramValue(int index) const = 0;
+    virtual float paramMin(int index) const { return 0; }
+    virtual float paramMax(int index) const { return 0; }
+    virtual float paramScale(int index) const { return kScaleLinear; }
+    virtual void paramSetValue(int index, float value) = 0;
+    virtual std::string paramName(int index) const { return "(no name)"; }
+    virtual std::string paramDesc(int index) const { return "(no desc)"; }
+    virtual std::string paramLabel(int index) const { return "(no label)"; }
+    virtual uint32_t paramCount() const = 0;
+
+    // DSP
+    virtual void process(float_type const * const * inputs,
+                         float_type * const *       outputs,
+                         uint32_t                   nframes,
+                         Event const *              events,
+                         uint32_t                   nevents) = 0;
   };
 }
 

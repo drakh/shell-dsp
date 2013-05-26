@@ -6,12 +6,14 @@ declare license "MIT";
 
 import("shell-core.lib");
 
-shell_osc(t, f) = sin(t * f * 2 * SHELL_PI / SR);
+shell_sin(t, f) = sin(t * f * 2 * SHELL_PI / SR);
+
 shell_square(t, f, ratio, y0, y1) = value with {
     period = int(SR / f);
     part = select2(period == 0, int(t) % period >= ratio * period, 0);
     value = select2(part, y0, y1);
 };
+
 shell_saw(t, f, ratio, y0, y1, y2) = value with {
     period = int(SR / f);
     t0 = select2(period == 0, int(t) % period, 0);
@@ -21,3 +23,4 @@ shell_saw(t, f, ratio, y0, y1, y2) = value with {
                     y0 + t0 * (y1 - y0) / t1,
                     y1 + t0 * (y2 - y1) / (period - t1));
 };
+

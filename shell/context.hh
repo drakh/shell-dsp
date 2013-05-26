@@ -9,23 +9,25 @@ namespace shell
   class Context
   {
   public:
-    Context(uint32_t _sr)
-      : sr(_sr),
-        pi(3.141592653589793238462643383279502884197169399375105820974944592),
-        pi_sr(2 * pi / float_type(sr)),
-        step(0)
+    Context(uint32_t sr)
+      : sr_(sr),
+        pi_(3.141592653589793238462643383279502884197169399375105820974944592),
+        pi_sr_(2 * pi_ / float_type(sr))
     {
     }
 
     inline uint32_t msToStep(uint32_t ms) const {
-      return 1000 * ms / sr;
+      return (ms * sr_) / 1000;
+    }
+
+    inline uint32_t stepToMs(uint32_t step) const {
+      return (step * 1000) / sr_;
     }
 
   protected:
-    const uint32_t   sr;        // sampling rate
-    const float_type pi;        // 3.14...
-    const float_type pi_sr;     // 2 * pi / sr
-    uint64_t         step;      // the current step
+    const uint32_t   sr_;       // sampling rate
+    const float_type pi_;       // 3.14...
+    const float_type pi_sr_;    // 2 * pi / sr
   };
 }
 

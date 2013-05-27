@@ -9,8 +9,10 @@
 #include <dssi.h>
 
 #include "dsp.hh"
-#include "kicker.hh"
 #include "note.hh"
+
+#include "kicker.hh"
+#include "osc1.hh"
 
 #define LOG_HERE std::cerr << __PRETTY_FUNCTION__ << std::endl
 
@@ -174,7 +176,7 @@ namespace shell
         port_descriptors_[offset] = LADSPA_PORT_CONTROL | LADSPA_PORT_INPUT;
         port_names_[offset] = strdup(dsp_->paramName(i / 2).c_str());
         port_range_hints_[offset].HintDescriptor = LADSPA_HINT_BOUNDED_BELOW |
-          LADSPA_HINT_BOUNDED_ABOVE |
+          LADSPA_HINT_BOUNDED_ABOVE | LADSPA_HINT_INTEGER |
           (dsp_->paramScale(i / 2) == Dsp<float_type>::kScaleLog ?
            LADSPA_HINT_LOGARITHMIC : 0);
         port_range_hints_[offset].LowerBound = dsp_->paramMin(i / 2);
@@ -214,6 +216,10 @@ namespace shell
       free((void*)ladspa_desc_.Label);
       free((void*)ladspa_desc_.Name);
       free((void*)ladspa_desc_.Maker);
+      for (int i = 0; i < 2 * dsp_->paramCount(); i += 2) {
+        int offset = i + dsp_->inputCount() + dsp_->outputCount();
+        free(port_names_[offset]);
+      }
     }
 
     /* ladspa stuff */
@@ -252,6 +258,7 @@ const DSSI_Descriptor *dssi_descriptor(unsigned long index)
 {
   std::vector<shell::DssiDescriptor<long double> *> plugins = {
     new shell::DssiDescriptor<long double>(new shell::Kicker<long double> (44100)),
+    new shell::DssiDescriptor<long double>(new shell::Osc1<long double> (44100)),
   };
 
   if (index < plugins.size())

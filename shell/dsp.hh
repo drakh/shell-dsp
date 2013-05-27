@@ -37,15 +37,15 @@ namespace shell
     };
 
     // Parameters stuff
-    virtual float paramValue(int index) const = 0;
     virtual float paramMin(int index) const { return 0; }
     virtual float paramMax(int index) const { return 0; }
     virtual float paramScale(int index) const { return kScaleLinear; }
-    virtual void paramSetValue(int index, float value) = 0;
+    virtual float paramValue(int index) const { return 0; }
+    virtual void paramSetValue(int index, float value) {}
     virtual std::string paramName(int index) const { return "(no name)"; }
     virtual std::string paramDesc(int index) const { return "(no desc)"; }
     virtual std::string paramLabel(int index) const { return "(no label)"; }
-    virtual uint32_t paramCount() const = 0;
+    virtual uint32_t paramCount() const { return 0; }
 
     // DSP
     virtual void process(float_type const * const * inputs,

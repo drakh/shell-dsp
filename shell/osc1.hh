@@ -3,6 +3,7 @@
 
 # include "dsp.hh"
 # include "adsr.hh"
+# include "osc.hh"
 
 namespace shell
 {
@@ -15,10 +16,7 @@ namespace shell
       : Dsp<float_type>(),
         ctx_(ctx),
         adsr_(ctx_),
-        phi_(0),
-        step_(0),
-        phase_(0),
-        phase_step_(0)
+        osc_(ctx_)
     {
     }
 
@@ -36,24 +34,25 @@ namespace shell
 
     virtual Param & param(uint32_t index) override
     {
+      if (index < osc_.paramCount())
+        return osc_.param(index);
+      index -= osc_.paramCount();
       return adsr_.param(index);
     }
 
     virtual uint32_t paramCount() const override
     {
-      return adsr_.paramCount();
+      return osc_.paramCount() + adsr_.paramCount();
     }
 
     virtual void noteOn(const SynthEvent & se) override
     {
-      std::cout << "note on" << std::endl;
-      phase_step_ = se.freq * ctx_.pi_sr_;
+      osc_.setFreq(se.freq);
       adsr_.noteOn();
     }
 
     virtual void noteOff(const SynthEvent &) override
     {
-      std::cout << "note off" << std::endl;
       adsr_.noteOff();
     }
 
@@ -66,25 +65,14 @@ namespace shell
         return;
       }
 
-      float_type wave = adsr_.step() * std::sin(phase_ + phi_);
+      float_type wave = adsr_.step() * osc_.step();
       outputs[0] = wave;
       outputs[1] = wave;
-
-      /* step stuff */
-      phase_ += phase_step_;
-      ++step_;
     }
 
     const Context<float_type> & ctx_;
     Adsr<float_type>            adsr_; // envelope
-
-    /* params */
-    float_type phi_;
-
-    /* internal */
-    int32_t    step_;
-    float_type phase_;
-    float_type phase_step_; // the amount to add to phase for each step
+    Osc<float_type>             osc_;  // oscillator
   };
 }
 

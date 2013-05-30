@@ -24,11 +24,12 @@ namespace shell
   class LadspaHandle : public NonCopyable
   {
   public:
-    LadspaHandle(Dsp<float_type> * dsp)
-      : dsp_(dsp)
+    LadspaHandle(uint32_t                sample_rate,
+                 const Dsp<float_type> * dsp)
+      : ctx_(sample_rate),
+        dsp_(dsp->clone(ctx_))
     {
-      ports_.resize(dsp->inputCount() + dsp->outputCount()
-                    + 2 * dsp->paramCount());
+      ports_.resize(dsp_->inputCount() + dsp_->outputCount() + 2 * dsp_->paramCount());
     }
 
     ~LadspaHandle()
@@ -36,11 +37,11 @@ namespace shell
       delete dsp_;
     }
 
-    static void activate(LADSPA_Handle instance)
+    static void activate(LADSPA_Handle /*instance*/)
     {
     }
 
-    static void deactivate(LADSPA_Handle instance)
+    static void deactivate(LADSPA_Handle /*instance*/)
     {
     }
 
@@ -61,61 +62,56 @@ namespace shell
       // copy params
       for (int i = 0; i < dsp->paramCount(); ++i) {
         int offset = dsp->inputCount() + dsp->outputCount();
-        dsp->paramSetValue(i, *thiz->ports_[i * 2 + offset]);
+        dsp->param(i).set_(*thiz->ports_[i * 2 + offset]);
+        // XXX
         *thiz->ports_[i * 2 + offset + 1] = *thiz->ports_[i * 2 + offset];
       }
 
-      float_type  data[dsp->inputCount() + dsp->outputCount()][sample_count];
-      float_type *inputs[dsp->inputCount()];
-      float_type *outputs[dsp->inputCount()];
-      for (int i = 0; i < dsp->inputCount(); ++i) {
-        inputs[i] = data[i];
-        for (int j = 0; j < sample_count; ++j)
-          data[i][j] = thiz->ports_[i][j];
-      }
+      float *inputs[dsp->inputCount()];
+      float *outputs[dsp->inputCount()];
+      for (int i = 0; i < dsp->inputCount(); ++i)
+        inputs[i] = thiz->ports_[i];
       for (int i = 0; i < dsp->outputCount(); ++i)
-        outputs[i] = data[i + dsp->inputCount()];
+        outputs[i] = thiz->ports_[i + dsp->inputCount()];
 
-      std::vector<Event> evs;
-      Event e;
-      for (int i = 0; i < event_count; ++i) {
-        switch (events[i].type) {
-        case SND_SEQ_EVENT_NOTE:
-          break;
+      float_type in[dsp->inputCount()];
+      float_type out[dsp->outputCount()];
 
-        case SND_SEQ_EVENT_NOTEON:
-          e.type = Event::kSynthEvent;
-          e.offset = events[i].time.tick;
-          e.synth.freq = noteToFreq<float_type>(events[i].data.note.note);
-          e.synth.velocity = events[i].data.note.velocity;
-          e.synth.gate = true;
-          evs.push_back(e);
-          break;
+      SynthEvent se;
+      int        e = 0;
+      for (int i = 0; i < sample_count; ++i) {
+        // check synth events
+        if (e < event_count && events[e].time.tick == i) {
+          switch (events[i].type) {
+          case SND_SEQ_EVENT_NOTEON:
+            se.freq     = noteToFreq<float_type>(events[i].data.note.note);
+            se.velocity = events[i].data.note.velocity;
+            se.channel  = events[i].data.note.channel;
+            dsp->noteOn(se);
+            break;
 
-        case SND_SEQ_EVENT_NOTEOFF:
-          e.type           = Event::kSynthEvent;
-          e.offset         = events[i].time.tick;
-          e.synth.freq     = 0;
-          e.synth.velocity = 0;
-          e.synth.gate     = false;
-          evs.push_back(e);
-          break;
+          case SND_SEQ_EVENT_NOTEOFF:
+            se.freq     = noteToFreq<float_type>(events[i].data.note.note);
+            se.velocity = events[i].data.note.velocity;
+            se.channel  = events[i].data.note.channel;
+            dsp->noteOff(se);
+            break;
 
-        case SND_SEQ_EVENT_KEYPRESS:
-          break;
-
-        default:
-          std::cerr << "[SHELL] unhandled midi event: " << events[i].type
-                    << std::endl;
-          break;
+          default:
+            std::cerr << "[SHELL] unhandled midi event: " << (int)events[i].type
+                      << std::endl;
+            break;
+          }
         }
+
+        for (int j = 0; j < dsp->inputCount(); ++j)
+          in[j] = inputs[j][i];
+
+        dsp->step(in, out);
+
+        for (int j = 0; j < dsp->outputCount(); ++j)
+          outputs[j][i] = out[j];
       }
-
-      dsp->process(inputs, outputs, sample_count, &evs[0], evs.size());
-
-      for (int i = 0; i < dsp->outputCount(); ++i)
-        for (int j = 0; j < sample_count; ++j)
-          thiz->ports_[i + dsp->inputCount()][j] = outputs[i][j];
     }
 
     static void cleanup(LADSPA_Handle instance)
@@ -133,10 +129,11 @@ namespace shell
           port < thiz->dsp_->inputCount() + thiz->dsp_->outputCount())
         return;
       port -= thiz->dsp_->inputCount() + thiz->dsp_->outputCount();
-      *data_location = thiz->dsp_->paramValue(port / 2);
+      *data_location = thiz->dsp_->param(port / 2).get_();
     }
 
   private:
+    const Context<float_type>  ctx_;
     Dsp<float_type> *          dsp_;
     std::vector<LADSPA_Data *> ports_;
   };
@@ -172,15 +169,17 @@ namespace shell
         port_names_[offset] = "output";
       }
       for (int i = 0; i < 2 * dsp_->paramCount(); i += 2) {
+        auto & param = dsp_->param(i / 2);
         int offset = i + dsp_->inputCount() + dsp_->outputCount();
         port_descriptors_[offset] = LADSPA_PORT_CONTROL | LADSPA_PORT_INPUT;
-        port_names_[offset] = strdup(dsp_->paramName(i / 2).c_str());
+        port_names_[offset] = strdup(param.name_.c_str());
         port_range_hints_[offset].HintDescriptor = LADSPA_HINT_BOUNDED_BELOW |
-          LADSPA_HINT_BOUNDED_ABOVE | LADSPA_HINT_INTEGER |
-          (dsp_->paramScale(i / 2) == Dsp<float_type>::kScaleLog ?
-           LADSPA_HINT_LOGARITHMIC : 0);
-        port_range_hints_[offset].LowerBound = dsp_->paramMin(i / 2);
-        port_range_hints_[offset].UpperBound = dsp_->paramMax(i / 2);
+          LADSPA_HINT_BOUNDED_ABOVE |
+          (param.type_ == Param::kInteger ? LADSPA_HINT_INTEGER : 0) |
+          (param.type_ == Param::kBoolean ? LADSPA_HINT_INTEGER : 0) |
+          (param.scale_ == Param::kLog ? LADSPA_HINT_LOGARITHMIC : 0);
+        port_range_hints_[offset].LowerBound = param.min_;
+        port_range_hints_[offset].UpperBound = param.max_;
 
         port_descriptors_[offset + 1] = LADSPA_PORT_CONTROL | LADSPA_PORT_OUTPUT;
         port_names_[offset + 1] = port_names_[offset];
@@ -238,10 +237,7 @@ namespace shell
     {
       DssiDescriptor<float_type> *desc =
         reinterpret_cast<DssiDescriptor<float_type> *>(ptr->ImplementationData);
-      Dsp<float_type> *dsp = desc->dsp_->clone(sample_rate);
-      if (!dsp)
-        return nullptr;
-      return new LadspaHandle<float_type>(dsp);
+      return new LadspaHandle<float_type>(sample_rate, desc->dsp_);
     }
 
   private:
@@ -256,9 +252,10 @@ namespace shell
 
 const DSSI_Descriptor *dssi_descriptor(unsigned long index)
 {
+  shell::Context<long double> ctx(44100);
   std::vector<shell::DssiDescriptor<long double> *> plugins = {
-    new shell::DssiDescriptor<long double>(new shell::Kicker<long double> (44100)),
-    new shell::DssiDescriptor<long double>(new shell::Osc1<long double> (44100)),
+    new shell::DssiDescriptor<long double>(new shell::Kicker<long double> (ctx)),
+    new shell::DssiDescriptor<long double>(new shell::Osc1<long double> (ctx)),
   };
 
   if (index < plugins.size())

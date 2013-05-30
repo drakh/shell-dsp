@@ -2,6 +2,7 @@
 # define SHELL_OSC1_HH
 
 # include "dsp.hh"
+# include "adsr.hh"
 
 namespace shell
 {
@@ -9,21 +10,21 @@ namespace shell
   class Osc1 : public Dsp<float_type>
   {
   public:
-    Osc1(uint32_t sample_rate)
-      : Dsp<float_type>(sample_rate),
+
+    Osc1(const Context<float_type> & ctx)
+      : Dsp<float_type>(),
+        ctx_(ctx),
+        adsr_(ctx_),
         phi_(0),
-        attack_(this->msToStep(300)),
-        sustain_(this->msToStep(3000)),
         step_(0),
         phase_(0),
-        phase_step_(0),
-        sustain_step_(0)
+        phase_step_(0)
     {
     }
 
-    virtual Dsp<float_type> *clone(uint32_t sample_rate) const override
+    virtual Dsp<float_type> *clone(const Context<float_type> & ctx) const override
     {
-      return new Osc1<float_type>(sample_rate);
+      return new Osc1<float_type>(ctx);
     }
 
     virtual std::string author() const override { return "Alexandre BIQUE"; }
@@ -33,64 +34,57 @@ namespace shell
     virtual uint32_t inputCount() const override { return 0; }
     virtual uint32_t outputCount() const override { return 2; }
 
-    inline float_type processStep()
+    virtual Param & param(uint32_t index) override
     {
-      float_type attack = 1 - exp(-5 * float_type(step_) / float_type(attack_));
-      float_type wave   = attack * std::sin(phase_);
+      return adsr_.param(index);
+    }
 
-      if (sustain_step_ > 0) {
-        float_type sustain = exp(-5 * float_type(step_ - sustain_step_) / float_type(sustain_));
-        wave *= sustain;
+    virtual uint32_t paramCount() const override
+    {
+      return adsr_.paramCount();
+    }
+
+    virtual void noteOn(const SynthEvent & se) override
+    {
+      std::cout << "note on" << std::endl;
+      phase_step_ = se.freq * ctx_.pi_sr_;
+      adsr_.noteOn();
+    }
+
+    virtual void noteOff(const SynthEvent &) override
+    {
+      std::cout << "note off" << std::endl;
+      adsr_.noteOff();
+    }
+
+    virtual void step(const float_type * /*inputs*/,
+                      float_type * outputs) override
+    {
+      if (adsr_.state() == Adsr<float_type>::kIdle) {
+        outputs[0] = 0;
+        outputs[1] = 0;
+        return;
       }
+
+      float_type wave = adsr_.step() * std::sin(phase_ + phi_);
+      outputs[0] = wave;
+      outputs[1] = wave;
 
       /* step stuff */
       phase_ += phase_step_;
       ++step_;
-      return wave;
     }
 
-    virtual void process(float_type const * const * /*inputs*/,
-                         float_type * const *       outputs,
-                         uint32_t                   nframes,
-                         Event const *              events,
-                         uint32_t                   nevents) override
-    {
-      uint32_t ei = 0;
-      for (uint32_t i = 0; i < nframes; ++i) {
-        for (; ei < nevents && events[ei].offset == i; ++ei) {
-          switch (events[ei].type) {
-          case Event::kSynthEvent:
-            if (events[ei].synth.gate) {
-              step_         = 0;
-              sustain_step_ = 0;
-              phase_        = phi_;
-              phase_step_   = events[ei].synth.freq * this->pi_sr_;
-            } else
-              sustain_step_ = step_;
-            break;
-
-          case Event::kParamEvent:
-            this->paramSetValue(events[ei].param.index, events[ei].param.value);
-            break;
-          }
-        }
-
-        auto val = processStep();
-        outputs[0][i] = val;
-        outputs[1][i] = val;
-      }
-    }
+    const Context<float_type> & ctx_;
+    Adsr<float_type>            adsr_; // envelope
 
     /* params */
     float_type phi_;
-    float_type attack_;
-    float_type sustain_;
 
     /* internal */
-    int64_t    step_;
+    int32_t    step_;
     float_type phase_;
-    float_type phase_step_;
-    float_type sustain_step_;
+    float_type phase_step_; // the amount to add to phase for each step
   };
 }
 

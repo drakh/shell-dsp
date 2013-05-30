@@ -24,7 +24,6 @@ namespace shell
       return (step * 1000) / sr_;
     }
 
-  protected:
     const uint32_t   sr_;       // sampling rate
     const float_type pi_;       // 3.14...
     const float_type pi_sr_;    // 2 * pi / sr

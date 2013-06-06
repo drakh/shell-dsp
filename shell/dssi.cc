@@ -10,7 +10,7 @@
 
 #include "dsp.hh"
 #include "note.hh"
-
+#include "auto-voice.hh"
 #include "kicker.hh"
 #include "osc1.hh"
 
@@ -43,6 +43,23 @@ namespace shell
 
     static void deactivate(LADSPA_Handle /*instance*/)
     {
+    }
+
+    static char *configure(LADSPA_Handle  instance,
+                           const char    *key,
+                           const char    *value)
+    {
+      std::cout << "configure: " << key << ", " << value << std::endl;
+      auto thiz = reinterpret_cast<LadspaHandle<float_type> *>(instance);
+      auto dsp  = thiz->dsp_;
+      return nullptr;
+    }
+
+    static int getMidiControllerForPort(LADSPA_Handle instance,
+                                          unsigned long port)
+    {
+      std::cout << "get_midi_controller_for_port: " << port << std::endl;
+      return DSSI_NONE;
     }
 
     static void run(LADSPA_Handle    instance,
@@ -81,19 +98,32 @@ namespace shell
       int        e = 0;
       for (int i = 0; i < sample_count; ++i) {
         // check synth events
-        if (e < event_count && events[e].time.tick == i) {
-          switch (events[i].type) {
+        for (; e < event_count && events[e].time.tick == i; ++e) {
+          std::cout << "event: " << e << "; ";
+          switch (events[e].type) {
           case SND_SEQ_EVENT_NOTEON:
-            se.freq     = noteToFreq<float_type>(events[i].data.note.note);
-            se.velocity = events[i].data.note.velocity;
-            se.channel  = events[i].data.note.channel;
+            std::cout << "note on: " << (int)events[e].data.note.note
+                      << ", client: " << (int)events[e].source.client
+                      << ", port: " << (int)events[e].source.port
+                      << ", client: " << (int)events[e].dest.client
+                      << ", port: " << (int)events[e].dest.port
+                      << std::endl;
+            se.freq     = noteToFreq<float_type>(events[e].data.note.note);
+            se.velocity = events[e].data.note.velocity;
+            se.channel  = events[e].data.note.channel;
             dsp->noteOn(se);
             break;
 
           case SND_SEQ_EVENT_NOTEOFF:
-            se.freq     = noteToFreq<float_type>(events[i].data.note.note);
-            se.velocity = events[i].data.note.velocity;
-            se.channel  = events[i].data.note.channel;
+            std::cout << "note off: " << (int)events[e].data.note.note
+                      << ", client: " << (int)events[e].source.client
+                      << ", port: " << (int)events[e].source.port
+                      << ", client: " << (int)events[e].dest.client
+                      << ", port: " << (int)events[e].dest.port
+                      << std::endl;
+            se.freq     = noteToFreq<float_type>(events[e].data.note.note);
+            se.velocity = events[e].data.note.velocity;
+            se.channel  = events[e].data.note.channel;
             dsp->noteOff(se);
             break;
 
@@ -200,10 +230,10 @@ namespace shell
 
       dssi_desc_.DSSI_API_Version = 1;
       dssi_desc_.LADSPA_Plugin = &ladspa_desc_;
-      dssi_desc_.configure = nullptr;
+      dssi_desc_.configure = &LadspaHandle<float_type>::configure;
       dssi_desc_.get_program = nullptr;
       dssi_desc_.select_program = nullptr;
-      dssi_desc_.get_midi_controller_for_port = nullptr;
+      dssi_desc_.get_midi_controller_for_port = &LadspaHandle<float_type>::getMidiControllerForPort;
       dssi_desc_.run_synth = &LadspaHandle<float_type>::runSynth;
       dssi_desc_.run_synth_adding = nullptr;
       dssi_desc_.run_multiple_synths = nullptr;
@@ -254,8 +284,10 @@ const DSSI_Descriptor *dssi_descriptor(unsigned long index)
 {
   shell::Context<long double> ctx(44100);
   std::vector<shell::DssiDescriptor<long double> *> plugins = {
-    new shell::DssiDescriptor<long double>(new shell::Kicker<long double> (ctx)),
-    new shell::DssiDescriptor<long double>(new shell::Osc1<long double> (ctx)),
+    new shell::DssiDescriptor<long double>(
+      new shell::Kicker<long double> (ctx)),
+    new shell::DssiDescriptor<long double>(
+      new shell::Osc1<long double> (ctx)),
   };
 
   if (index < plugins.size())

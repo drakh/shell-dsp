@@ -16,9 +16,16 @@ namespace shell
   class Dsp : public NonCopyable
   {
   public:
-    inline virtual ~Dsp() {}
+    Dsp(const Context<float_type> & ctx)
+      : ctx_(ctx)
+    {
+    }
+
+    virtual ~Dsp() {}
 
     virtual Dsp<float_type> *clone(const Context<float_type> & ctx) const = 0;
+
+    const Context<float_type> & ctx() const { return ctx_; }
 
     virtual std::string author() const { return "None"; }
     virtual std::string name() const { return "Unnamed"; }
@@ -36,6 +43,9 @@ namespace shell
 
     // process one frame
     virtual void step(const float_type * inputs, float_type * outputs) = 0 ;
+
+  protected:
+    const Context<float_type> & ctx_;
   };
 }
 

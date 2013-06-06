@@ -16,10 +16,9 @@ namespace shell
   public:
 
     Kicker(const Context<float_type> & ctx)
-      : Dsp<float_type>(),
-        ctx_(ctx),
-        osc_(ctx_),
-        decay_(ctx_.sr_ / 4),
+      : Dsp<float_type>(ctx),
+        osc_(ctx),
+        decay_(ctx.sr_ / 4),
         step_(decay_ + 1),
         f1_(700),
         f2_(0)
@@ -80,7 +79,7 @@ namespace shell
       return params_.size() + osc_.paramCount();
     }
 
-    void noteOn(const SynthEvent & se) override
+    void noteOn(const SynthEvent & /*se*/) override
     {
       step_  = 0;
     }
@@ -107,7 +106,6 @@ namespace shell
     }
 
   private:
-    const Context<float_type> & ctx_;
     Osc<float_type>             osc_;
     uint32_t                    decay_; // in step
     uint32_t                    step_;  // the step since start();

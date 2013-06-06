@@ -4,6 +4,7 @@
 # include <cmath>
 # include <cstdint>
 # include <stdexcept>
+# include <array>
 
 # include "context.hh"
 # include "param.hh"
@@ -72,17 +73,8 @@ namespace shell
       params_[3].set_ = [this] (float v) { this->r_ = this->ctx_.msToStep(v); };
     }
 
-    Param & param(uint32_t index)
-    {
-      if (index >= paramCount())
-        throw std::out_of_range("");
-      return params_[index];
-    }
-
-    uint32_t paramCount() const
-    {
-      return sizeof (params_) / sizeof (*params_);
-    }
+    Param & param(uint32_t index) { return params_.at(index); }
+    uint32_t paramCount() const { return params_.size(); }
 
     void noteOn()
     {
@@ -152,7 +144,7 @@ namespace shell
     uint32_t                    d_; // duration in steps
     float_type                  s_; // sustain level
     uint32_t                    r_; // duration in steps
-    Param                       params_[4];
+    std::array<Param, 4>        params_;
   };
 }
 

@@ -5,7 +5,7 @@ namespace shell
 {
   struct SynthEvent
   {
-    uint32_t channel;
+    uint32_t channel; // starts at 0.
     float    freq;
     float    velocity;
   };

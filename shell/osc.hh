@@ -96,6 +96,10 @@ namespace shell
       case kTri:
         value = std::abs(phase_ / ctx_.pi_d2_ - 2) - 1;
         break;
+
+      default:
+        value = 0;
+        break;
       }
 
       phase_ += freq_ * ctx_.pi_sr_;

@@ -13,10 +13,9 @@ namespace shell
   public:
 
     Osc1(const Context<float_type> & ctx)
-      : Dsp<float_type>(),
-        ctx_(ctx),
-        adsr_(ctx_),
-        osc_(ctx_)
+      : Dsp<float_type>(ctx),
+        adsr_(ctx),
+        osc_(ctx)
     {
     }
 
@@ -70,7 +69,6 @@ namespace shell
       outputs[1] = wave;
     }
 
-    const Context<float_type> & ctx_;
     Adsr<float_type>            adsr_; // envelope
     Osc<float_type>             osc_;  // oscillator
   };

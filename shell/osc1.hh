@@ -4,6 +4,7 @@
 # include "dsp.hh"
 # include "adsr.hh"
 # include "osc.hh"
+# include "lfo.hh"
 
 namespace shell
 {
@@ -15,7 +16,8 @@ namespace shell
     Osc1(const Context<float_type> & ctx)
       : Dsp<float_type>(ctx),
         adsr_(ctx),
-        osc_(ctx)
+        osc_(ctx),
+        lfo_(ctx)
     {
     }
 
@@ -36,17 +38,22 @@ namespace shell
       if (index < osc_.paramCount())
         return osc_.param(index);
       index -= osc_.paramCount();
-      return adsr_.param(index);
+      if (index < adsr_.paramCount())
+        return adsr_.param(index);
+      index -= adsr_.paramCount();
+      return lfo_.param(index);
     }
 
     virtual uint32_t paramCount() const override
     {
-      return osc_.paramCount() + adsr_.paramCount();
+      return osc_.paramCount() + adsr_.paramCount() + lfo_.paramCount();
     }
 
     virtual void noteOn(const SynthEvent & se) override
     {
-      osc_.setFreq(se.freq);
+      // should I reset phase? osc_.setPhase(0);
+      freq_ = se.freq;
+      osc_.setFreq(freq_);
       adsr_.noteOn();
     }
 
@@ -64,13 +71,16 @@ namespace shell
         return;
       }
 
+      osc_.setFreq(freq_ * lfo_.step());
       float_type wave = adsr_.step() * osc_.step();
       outputs[0] = wave;
       outputs[1] = wave;
     }
 
-    Adsr<float_type>            adsr_; // envelope
-    Osc<float_type>             osc_;  // oscillator
+    Adsr<float_type> adsr_;     // envelope
+    Osc<float_type>  osc_;      // oscillator
+    Lfo<float_type>  lfo_;      // lfo
+    float_type       freq_;
   };
 }
 

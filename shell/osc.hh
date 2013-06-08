@@ -51,9 +51,19 @@ namespace shell
       return params_.size();
     }
 
+    float_type freq() const
+    {
+      return freq_;
+    }
+
     void setFreq(float_type freq)
     {
       freq_ = freq;
+    }
+
+    void setPhase(float_type phase)
+    {
+      phase_ = phase;
     }
 
     float_type step()

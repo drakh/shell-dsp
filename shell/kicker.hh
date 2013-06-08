@@ -18,8 +18,8 @@ namespace shell
     Kicker(const Context<float_type> & ctx)
       : Dsp<float_type>(ctx),
         osc_(ctx),
-        decay_(ctx.sr_ / 4),
-        step_(decay_ + 1),
+        duration_(ctx.sr_ / 4),
+        step_(duration_ + 1),
         f1_(700),
         f2_(0)
     {
@@ -43,15 +43,15 @@ namespace shell
       params_[1].get_ = [this] { return this->ctx_.stepToMs(this->f2_); };
       params_[1].set_ = [this] (float v) { this->f2_ = v; };
 
-      // decay
+      // duration
       params_[2].type_ = Param::kInteger;
       params_[2].scale_ = Param::kLinear;
       params_[2].min_ = 0;
       params_[2].max_ = 2000;
-      params_[2].name_ = "decay";
+      params_[2].name_ = "duration";
       params_[2].desc_ = "duration (ms)";
-      params_[2].get_ = [this] { return this->ctx_.stepToMs(this->decay_); };
-      params_[2].set_ = [this] (float v) { this->decay_ = this->ctx_.msToStep(v); };
+      params_[2].get_ = [this] { return this->ctx_.stepToMs(this->duration_); };
+      params_[2].set_ = [this] (float v) { this->duration_ = this->ctx_.msToStep(v); };
     }
 
     virtual Dsp<float_type> *clone(const Context<float_type> & ctx) const override
@@ -82,22 +82,23 @@ namespace shell
     void noteOn(const SynthEvent & /*se*/) override
     {
       step_  = 0;
+      osc_.setPhase(0);
     }
 
     inline void step(const float_type * /*input*/,
                      float_type * output) override
     {
-      if (step_ > decay_) {
+      if (step_ > duration_) {
         output[0] = 0;
         output[1] = 0;
         return;
       }
 
       float_type freq = f1_ + (f2_ - f1_) *
-        (1 - std::exp((-5 * float_type(step_)) / float_type(decay_)));
+        (1 - std::exp((-5 * float_type(step_)) / float_type(duration_)));
       osc_.setFreq(freq);
       float_type wave = osc_.step();
-      float_type shape = exp(-5 * float_type(step_) / float_type(decay_));
+      float_type shape = exp(-5 * float_type(step_) / float_type(duration_));
       float_type out =  wave * shape;
 
       output[0] = out;
@@ -107,7 +108,7 @@ namespace shell
 
   private:
     Osc<float_type>             osc_;
-    uint32_t                    decay_; // in step
+    uint32_t                    duration_; // in step
     uint32_t                    step_;  // the step since start();
     float_type                  f1_;
     float_type                  f2_;

@@ -84,6 +84,7 @@ namespace shell
 
     void noteOff()
     {
+      r0_    = step();
       state_ = kRelease;
       step_  = 0;
     }
@@ -127,7 +128,7 @@ namespace shell
           state_ = kIdle;
           return 0;
         }
-        value = s_ * std::exp((-4 * float_type(step_)) / float_type(r_));
+        value = r0_ * std::exp((-4 * float_type(step_)) / float_type(r_));
         ++step_;
         return value;
 
@@ -144,6 +145,7 @@ namespace shell
     uint32_t                    d_; // duration in steps
     float_type                  s_; // sustain level
     uint32_t                    r_; // duration in steps
+    float_type                  r0_; // initial value at release
     std::array<Param, 4>        params_;
   };
 }

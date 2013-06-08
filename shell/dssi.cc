@@ -287,7 +287,8 @@ const DSSI_Descriptor *dssi_descriptor(unsigned long index)
     new shell::DssiDescriptor<long double>(
       new shell::Kicker<long double> (ctx)),
     new shell::DssiDescriptor<long double>(
-      new shell::Osc1<long double> (ctx)),
+      new shell::AutoVoice<long double>(
+        new shell::Osc1<long double> (ctx))),
   };
 
   if (index < plugins.size())

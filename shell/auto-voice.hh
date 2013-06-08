@@ -1,6 +1,9 @@
 #ifndef SHELL_AUTO_VOICE_HH
 # define SHELL_AUTO_VOICE_HH
 
+# include <queue>
+# include <deque>
+
 # include "poly-synth.hh"
 
 namespace shell
@@ -13,9 +16,8 @@ namespace shell
       : Dsp<float_type> (synth->ctx()),
         poly_(synth, 16)
     {
-      evs_.resize(poly_.voiceCount());
-      for (auto it = evs_.begin(); it != evs_.end(); ++it)
-        it->freq = 0;
+      for (int i = 0; i < poly_.voiceCount(); ++i)
+        ready_.push(i);
     }
 
     virtual Dsp<float_type> *clone(const Context<float_type> & ctx) const override
@@ -35,27 +37,25 @@ namespace shell
 
     virtual void noteOn(const SynthEvent & se) override
     {
-      std::cout << "auto on: " << se.freq << std::endl;
-      for (auto it = evs_.begin(); it != evs_.end(); ++it) {
-        if (it->freq != 0)
-          continue;
-        *it = se;
-        it->channel = it - evs_.begin();
-        poly_.noteOn(*it);
-        break;
-      }
+      // do we have available voice?
+      if (ready_.empty())
+        return;
+
+      SynthEvent se2(se);
+      se2.channel = ready_.front();
+      ready_.pop();
+      busy_.push_back(se2);
+      poly_.noteOn(se2);
     }
 
     virtual void noteOff(const SynthEvent & se) override
     {
-      std::cout << "auto off: " << se.freq << std::endl;
-      for (auto it = evs_.begin(); it != evs_.end(); ++it) {
+      for (auto it = busy_.begin(); it != busy_.end(); ++it) {
         if (it->freq != se.freq)
           continue;
-        *it = se;
-        it->channel = it - evs_.begin();
         poly_.noteOff(*it);
-        it->freq = 0;
+        ready_.push(it->channel);
+        busy_.erase(it);
         break;
       }
     }
@@ -66,8 +66,9 @@ namespace shell
     }
 
   private:
-    PolySynth<float_type>   poly_;
-    std::vector<SynthEvent> evs_;
+    PolySynth<float_type>  poly_;
+    std::queue<int>        ready_;
+    std::deque<SynthEvent> busy_;
   };
 }
 

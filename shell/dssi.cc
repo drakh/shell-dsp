@@ -49,7 +49,6 @@ namespace shell
                            const char    *key,
                            const char    *value)
     {
-      std::cout << "configure: " << key << ", " << value << std::endl;
       auto thiz = reinterpret_cast<LadspaHandle<float_type> *>(instance);
       auto dsp  = thiz->dsp_;
       return nullptr;
@@ -58,7 +57,6 @@ namespace shell
     static int getMidiControllerForPort(LADSPA_Handle instance,
                                           unsigned long port)
     {
-      std::cout << "get_midi_controller_for_port: " << port << std::endl;
       return DSSI_NONE;
     }
 
@@ -99,15 +97,8 @@ namespace shell
       for (int i = 0; i < sample_count; ++i) {
         // check synth events
         for (; e < event_count && events[e].time.tick == i; ++e) {
-          std::cout << "event: " << e << "; ";
           switch (events[e].type) {
           case SND_SEQ_EVENT_NOTEON:
-            std::cout << "note on: " << (int)events[e].data.note.note
-                      << ", client: " << (int)events[e].source.client
-                      << ", port: " << (int)events[e].source.port
-                      << ", client: " << (int)events[e].dest.client
-                      << ", port: " << (int)events[e].dest.port
-                      << std::endl;
             se.freq     = noteToFreq<float_type>(events[e].data.note.note);
             se.velocity = events[e].data.note.velocity;
             se.channel  = events[e].data.note.channel;
@@ -115,12 +106,6 @@ namespace shell
             break;
 
           case SND_SEQ_EVENT_NOTEOFF:
-            std::cout << "note off: " << (int)events[e].data.note.note
-                      << ", client: " << (int)events[e].source.client
-                      << ", port: " << (int)events[e].source.port
-                      << ", client: " << (int)events[e].dest.client
-                      << ", port: " << (int)events[e].dest.port
-                      << std::endl;
             se.freq     = noteToFreq<float_type>(events[e].data.note.note);
             se.velocity = events[e].data.note.velocity;
             se.channel  = events[e].data.note.channel;

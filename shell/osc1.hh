@@ -5,6 +5,7 @@
 # include "adsr.hh"
 # include "osc.hh"
 # include "lfo.hh"
+# include "prefix-params.hh"
 
 namespace shell
 {
@@ -17,7 +18,8 @@ namespace shell
       : Dsp<float_type>(ctx),
         adsr_(ctx),
         osc_(ctx),
-        lfo_(ctx)
+        lfo_(ctx),
+        lfo_params_(lfo_, "lfo:")
     {
     }
 
@@ -41,7 +43,7 @@ namespace shell
       if (index < adsr_.paramCount())
         return adsr_.param(index);
       index -= adsr_.paramCount();
-      return lfo_.param(index);
+      return lfo_params_.param(index);
     }
 
     virtual uint32_t paramCount() const override
@@ -80,6 +82,7 @@ namespace shell
     Adsr<float_type> adsr_;     // envelope
     Osc<float_type>  osc_;      // oscillator
     Lfo<float_type>  lfo_;      // lfo
+    PrefixParams     lfo_params_;
     float_type       freq_;
   };
 }

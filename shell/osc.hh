@@ -15,8 +15,8 @@ namespace shell
   public:
 
     enum Waveform {
-      kSine,
-      kSine2,
+      kSin,
+      kAsin,
       kPoly1,
       kPoly2,
       kSquare,
@@ -26,7 +26,7 @@ namespace shell
 
     Osc(const Context<float_type> & ctx)
       : ctx_(ctx),
-        waveform_(kSine),
+        waveform_(kSin),
         phase_(0),
         freq_(0)
     {
@@ -74,13 +74,12 @@ namespace shell
       phase_ = std::fmod(phase_, ctx_.pi_x2_);
 
       switch (waveform_) {
-      case kSine:
+      case kSin:
         value = std::sin(phase_);
         break;
 
-      case kSine2:
-        value = std::sin(phase_);
-        value *= std::abs(value);
+      case kAsin:
+        value = std::asin(phase_ / ctx_.pi_ - 1) / ctx_.pi_d2_;
         break;
 
       case kSquare:

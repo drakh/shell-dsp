@@ -78,7 +78,6 @@ namespace shell
 
     virtual void noteOn(const SynthEvent & se) override
     {
-      std::cout << "channel: " << se.channel << std::endl;
       if (se.channel >= synths_.size())
         return;
       synths_[se.channel]->noteOn(se);

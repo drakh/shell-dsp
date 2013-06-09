@@ -13,6 +13,8 @@
 #include "auto-voice.hh"
 #include "kicker.hh"
 #include "osc1.hh"
+#include "binaural.hh"
+#include "circular-panner.hh"
 
 #define LOG_HERE std::cerr << __PRETTY_FUNCTION__ << std::endl
 
@@ -274,6 +276,17 @@ const DSSI_Descriptor *dssi_descriptor(unsigned long index)
     new shell::DssiDescriptor<long double>(
       new shell::AutoVoice<long double>(
         new shell::Osc1<long double> (ctx))),
+    new shell::DssiDescriptor<long double>(
+      new shell::AutoVoice<long double>(
+        new shell::Osc1<long double> (ctx))),
+    new shell::DssiDescriptor<long double>(
+      new shell::AutoVoice<long double>(
+        new shell::Binaural<long double> (
+          ctx,
+          new shell::Osc1<long double> (ctx),
+          new shell::Osc1<long double> (ctx)))),
+    new shell::DssiDescriptor<long double>(
+      new shell::CircularPanner<long double>(ctx)),
   };
 
   if (index < plugins.size())

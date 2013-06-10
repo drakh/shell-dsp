@@ -33,7 +33,7 @@ namespace shell
     virtual std::string desc() const override { return "Simple oscillator"; }
 
     virtual uint32_t inputCount() const override { return 0; }
-    virtual uint32_t outputCount() const override { return 2; }
+    virtual uint32_t outputCount() const override { return 1; }
 
     virtual Param & param(uint32_t index) override
     {
@@ -69,14 +69,12 @@ namespace shell
     {
       if (adsr_.state() == Adsr<float_type>::kIdle) {
         outputs[0] = 0;
-        outputs[1] = 0;
         return;
       }
 
       osc_.setFreq(freq_ * lfo_.step());
       float_type wave = adsr_.step() * osc_.step();
       outputs[0] = wave;
-      outputs[1] = wave;
     }
 
     Adsr<float_type> adsr_;     // envelope

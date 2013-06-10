@@ -15,6 +15,7 @@
 #include "osc1.hh"
 #include "binaural.hh"
 #include "circular-panner.hh"
+#include "stereizer.hh"
 
 #define LOG_HERE std::cerr << __PRETTY_FUNCTION__ << std::endl
 
@@ -272,13 +273,14 @@ const DSSI_Descriptor *dssi_descriptor(unsigned long index)
   shell::Context<long double> ctx(44100);
   std::vector<shell::DssiDescriptor<long double> *> plugins = {
     new shell::DssiDescriptor<long double>(
-      new shell::Kicker<long double> (ctx)),
+      new shell::Stereizer<long double>(
+        ctx,
+        new shell::Kicker<long double> (ctx))),
     new shell::DssiDescriptor<long double>(
-      new shell::AutoVoice<long double>(
-        new shell::Osc1<long double> (ctx))),
-    new shell::DssiDescriptor<long double>(
-      new shell::AutoVoice<long double>(
-        new shell::Osc1<long double> (ctx))),
+      new shell::Stereizer<long double>(
+        ctx,
+        new shell::AutoVoice<long double>(
+          new shell::Osc1<long double> (ctx)))),
     new shell::DssiDescriptor<long double>(
       new shell::AutoVoice<long double>(
         new shell::Binaural<long double> (

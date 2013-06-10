@@ -64,7 +64,7 @@ namespace shell
     virtual std::string desc() const override { return "Kicker"; }
 
     virtual uint32_t inputCount() const override { return 0; }
-    virtual uint32_t outputCount() const override { return 2; }
+    virtual uint32_t outputCount() const override { return 1; }
 
     virtual Param & param(uint32_t index) override
     {
@@ -90,7 +90,6 @@ namespace shell
     {
       if (step_ > duration_) {
         output[0] = 0;
-        output[1] = 0;
         return;
       }
 
@@ -102,7 +101,6 @@ namespace shell
       float_type out =  wave * shape;
 
       output[0] = out;
-      output[1] = out;
       ++step_;
     }
 

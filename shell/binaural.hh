@@ -18,6 +18,10 @@ namespace shell
         left_params_(*left_, "left:"),
         right_params_(*right_, "right:")
     {
+      assert(left->inputCount() == 0);
+      assert(right->inputCount() == 0);
+      assert(left->outputCount() == 1);
+      assert(right->outputCount() == 1);
     }
 
     ~Binaural()

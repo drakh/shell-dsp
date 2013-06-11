@@ -30,14 +30,14 @@ namespace shell
         phase_(0),
         freq_(0)
     {
-      // f1
+      // waveform
       params_[0].type_ = Param::kInteger;
       params_[0].scale_ = Param::kLinear;
       params_[0].min_ = 0;
       params_[0].max_ = kTri;
       params_[0].name_ = "waveform";
       params_[0].desc_ = "waveform (sine, square, saw, tri)";
-      params_[0].get_ = [this] { return this->ctx_.stepToMs(this->waveform_); };
+      params_[0].get_ = [this] { return this->waveform_; };
       params_[0].set_ = [this] (float v) { this->waveform_ = (Waveform)(v); };
     }
 

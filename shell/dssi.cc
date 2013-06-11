@@ -8,13 +8,14 @@
 #include <ladspa.h>
 #include <dssi.h>
 
-#include "dsp.hh"
-#include "note.hh"
 #include "auto-voice.hh"
-#include "kicker.hh"
-#include "osc1.hh"
 #include "binaural.hh"
 #include "circular-panner.hh"
+#include "dsp.hh"
+#include "kicker.hh"
+#include "noiser.hh"
+#include "note.hh"
+#include "osc1.hh"
 #include "stereizer.hh"
 
 #define LOG_HERE std::cerr << __PRETTY_FUNCTION__ << std::endl
@@ -272,21 +273,35 @@ const DSSI_Descriptor *dssi_descriptor(unsigned long index)
 {
   shell::Context<long double> ctx(44100);
   std::vector<shell::DssiDescriptor<long double> *> plugins = {
+
+    /* synth: kicker */
     new shell::DssiDescriptor<long double>(
       new shell::Stereizer<long double>(
         ctx,
         new shell::Kicker<long double> (ctx))),
+
+    /* synth: osc1 */
     new shell::DssiDescriptor<long double>(
       new shell::Stereizer<long double>(
         ctx,
         new shell::AutoVoice<long double>(
           new shell::Osc1<long double> (ctx)))),
+
+    /* synth: binaural osc1 */
     new shell::DssiDescriptor<long double>(
       new shell::AutoVoice<long double>(
         new shell::Binaural<long double> (
           ctx,
           new shell::Osc1<long double> (ctx),
           new shell::Osc1<long double> (ctx)))),
+
+    /* generator: noiser */
+    new shell::DssiDescriptor<long double>(
+      new shell::Stereizer<long double>(
+        ctx,
+        new shell::Noiser<long double>(ctx))),
+
+    /* filter: circular panner */
     new shell::DssiDescriptor<long double>(
       new shell::CircularPanner<long double>(ctx)),
   };

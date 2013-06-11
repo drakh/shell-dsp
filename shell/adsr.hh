@@ -16,6 +16,11 @@ namespace shell
   {
   public:
 
+    enum CurveType {
+      kLinear,
+      kExp,
+    };
+
     enum State {
       kIdle,
       kAttack,
@@ -27,6 +32,7 @@ namespace shell
     Adsr(const Context<float_type> & ctx)
       : ctx_(ctx),
         state_(kIdle),
+        curve_type_(kExp),
         a_(ctx_.sr_ / 10),
         d_(ctx_.sr_ / 10),
         s_(0.9),
@@ -71,6 +77,16 @@ namespace shell
       params_[3].desc_ = "duration (ms)";
       params_[3].get_ = [this] { return this->ctx_.stepToMs(this->r_); };
       params_[3].set_ = [this] (float v) { this->r_ = this->ctx_.msToStep(v); };
+
+      // curve type
+      params_[4].type_ = Param::kInteger;
+      params_[4].scale_ = Param::kLinear;
+      params_[4].min_ = 0;
+      params_[4].max_ = kExp;
+      params_[4].name_ = "type";
+      params_[4].desc_ = "curve type";
+      params_[4].get_ = [this] { return this->curve_type_; };
+      params_[4].set_ = [this] (float v) { this->curve_type_ = (CurveType)(v); };
     }
 
     Param & param(uint32_t index) { return params_.at(index); }
@@ -91,7 +107,53 @@ namespace shell
 
     State state() const { return state_; }
 
-    float_type step()
+    float_type stepLinear()
+    {
+      float_type value;
+
+      switch (state_) {
+      case kIdle:
+        return 0;
+
+      case kAttack:
+        if (step_ >= a_) {
+          state_ = kDecay;
+          step_  = 0;
+          return step();
+        }
+
+        value = float_type(step_) / float_type(a_);
+        ++step_;
+        return value;
+
+      case kDecay:
+        if (step_ >= d_) {
+          state_ = kSustain;
+          return step();
+        }
+
+        value = 1 - (1 - s_) * float_type(step_) / float_type(d_);
+        ++step_;
+        return value;
+
+      case kSustain:
+        return s_;
+
+      case kRelease:
+        if (step_ >= r_) {
+          state_ = kIdle;
+          return 0;
+        }
+        value = r0_ * float_type(r_ - step_) / float_type(r_);
+        ++step_;
+        return value;
+
+      default:
+        return 0;
+      }
+    }
+
+    float_type stepExp()
     {
       float_type value;
 
@@ -137,16 +199,31 @@ namespace shell
       }
     }
 
+    float_type step()
+    {
+      switch (curve_type_) {
+      case kLinear:
+        return stepLinear();
+
+      case kExp:
+        return stepExp();
+
+      default:
+        return 0;
+      }
+    }
+
   private:
     const Context<float_type> & ctx_;
     State                       state_;
     uint32_t                    step_;
+    CurveType                   curve_type_;
     uint32_t                    a_; // duration in steps
     uint32_t                    d_; // duration in steps
     float_type                  s_; // sustain level
     uint32_t                    r_; // duration in steps
     float_type                  r0_; // initial value at release
-    std::array<Param, 4>        params_;
+    std::array<Param, 5>        params_;
   };
 }
 

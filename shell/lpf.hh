@@ -10,43 +10,60 @@ namespace shell
   {
   public:
     Lpf(const Context<float_type> & ctx)
-      : Dsp<float_type>(ctx)
+      : Dsp<float_type>(ctx),
+        prev_(0),
+        cutoff_(0),
+        grow_(0)
     {
+      // cutoff
+      params_[0].type_  = Param::kInteger;
+      params_[0].scale_ = Param::kLog;
+      params_[0].min_   = 1;
+      params_[0].max_   = 22500;
+      params_[0].name_  = "cutoff";
+      params_[0].desc_  = "Cutoff (Hz)";
+      params_[0].get_   = [this] { return this->cutoff_; };
+      params_[0].set_   = [this] (float v) {
+        this->cutoff_ = v;
+        this->grow_ = std::exp(-this->ctx().pi_sr_ * this->cutoff_);
+      };
+      params_[0].set_(22500);
     }
 
     virtual Dsp<float_type> *clone(const Context<float_type> & ctx) const override
     {
-      return new CircularPanner<float_type>(ctx);
+      return new Lpf<float_type>(ctx);
     }
 
     virtual std::string author() const override { return "Alexandre BIQUE"; }
-    virtual std::string name() const override { return "Circular Panner"; }
-    virtual std::string desc() const override { return "circular Panner"; }
+    virtual std::string name() const override { return "LPF"; }
+    virtual std::string desc() const override { return "Low Pass Filter"; }
 
-    virtual uint32_t inputCount() const override { return 2; }
-    virtual uint32_t outputCount() const override { return 2; }
+    virtual uint32_t inputCount() const override { return 1; }
+    virtual uint32_t outputCount() const override { return 1; }
 
     virtual Param & param(uint32_t index) override
     {
-      return osc_.param(index);
+      return params_.at(index);
     }
 
     virtual uint32_t paramCount() const override
     {
-      return osc_.paramCount();
+      return params_.size();
     }
 
     virtual void step(const float_type * inputs,
                       float_type * outputs) override
     {
-      float_type value = std::abs(osc_.step());
-      outputs[0] = inputs[0] * (1 - value) + inputs[1] * value;
-      outputs[1] = inputs[0] * value + inputs[1] * (1 - value);
+      outputs[0] = inputs[0] - (inputs[0] - prev_) * grow_;
+      prev_ = outputs[0];
     }
 
   private:
+    std::array<Param, 1> params_;
+    float_type prev_;
     float_type cutoff_;
-    float_type resonance_;
+    float_type grow_;
   };
 }
 

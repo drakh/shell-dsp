@@ -35,6 +35,7 @@ namespace shell
         state_(kIdle),
         curve_type_(kExp),
         a_(ctx_.sr_ / 10),
+        h_(ctx_.sr_ / 10),
         d_(ctx_.sr_ / 10),
         s_(0.9),
         r_(ctx_.sr_ / 4)
@@ -49,45 +50,55 @@ namespace shell
       params_[0].get_ = [this] { return this->ctx_.stepToMs(this->a_); };
       params_[0].set_ = [this] (float v) { this->a_ = this->ctx_.msToStep(v); };
 
-      // decay
+      // hold
       params_[1].type_ = Param::kInteger;
       params_[1].scale_ = Param::kLinear;
       params_[1].min_ = 0;
       params_[1].max_ = 10000;
-      params_[1].name_ = "decay";
+      params_[1].name_ = "hold";
       params_[1].desc_ = "duration (ms)";
-      params_[1].get_ = [this] { return this->ctx_.stepToMs(this->d_); };
-      params_[1].set_ = [this] (float v) { this->d_ = this->ctx_.msToStep(v); };
+      params_[1].get_ = [this] { return this->ctx_.stepToMs(this->h_); };
+      params_[1].set_ = [this] (float v) { this->h_ = this->ctx_.msToStep(v); };
 
       // decay
-      params_[2].type_ = Param::kFloat;
+      params_[2].type_ = Param::kInteger;
       params_[2].scale_ = Param::kLinear;
       params_[2].min_ = 0;
-      params_[2].max_ = 1;
-      params_[2].name_ = "sustain";
-      params_[2].desc_ = "gain";
-      params_[2].get_ = [this] { return s_; };
-      params_[2].set_ = [this] (float v) { this->s_ = v; };
+      params_[2].max_ = 10000;
+      params_[2].name_ = "decay";
+      params_[2].desc_ = "duration (ms)";
+      params_[2].get_ = [this] { return this->ctx_.stepToMs(this->d_); };
+      params_[2].set_ = [this] (float v) { this->d_ = this->ctx_.msToStep(v); };
 
       // decay
-      params_[3].type_ = Param::kInteger;
+      params_[3].type_ = Param::kFloat;
       params_[3].scale_ = Param::kLinear;
       params_[3].min_ = 0;
-      params_[3].max_ = 10000;
-      params_[3].name_ = "release";
-      params_[3].desc_ = "duration (ms)";
-      params_[3].get_ = [this] { return this->ctx_.stepToMs(this->r_); };
-      params_[3].set_ = [this] (float v) { this->r_ = this->ctx_.msToStep(v); };
+      params_[3].max_ = 1;
+      params_[3].name_ = "sustain";
+      params_[3].desc_ = "gain";
+      params_[3].get_ = [this] { return s_; };
+      params_[3].set_ = [this] (float v) { this->s_ = v; };
 
-      // curve type
+      // decay
       params_[4].type_ = Param::kInteger;
       params_[4].scale_ = Param::kLinear;
       params_[4].min_ = 0;
-      params_[4].max_ = kExp;
-      params_[4].name_ = "type";
-      params_[4].desc_ = "curve type";
-      params_[4].get_ = [this] { return this->curve_type_; };
-      params_[4].set_ = [this] (float v) { this->curve_type_ = (CurveType)(v); };
+      params_[4].max_ = 10000;
+      params_[4].name_ = "release";
+      params_[4].desc_ = "duration (ms)";
+      params_[4].get_ = [this] { return this->ctx_.stepToMs(this->r_); };
+      params_[4].set_ = [this] (float v) { this->r_ = this->ctx_.msToStep(v); };
+
+      // curve type
+      params_[5].type_ = Param::kInteger;
+      params_[5].scale_ = Param::kLinear;
+      params_[5].min_ = 0;
+      params_[5].max_ = kExp;
+      params_[5].name_ = "type";
+      params_[5].desc_ = "curve type";
+      params_[5].get_ = [this] { return this->curve_type_; };
+      params_[5].set_ = [this] (float v) { this->curve_type_ = (CurveType)(v); };
     }
 
     Param & param(uint32_t index) { return params_.at(index); }
@@ -245,7 +256,7 @@ namespace shell
     float_type                  s_; // sustain level
     uint32_t                    r_; // duration in steps
     float_type                  r0_; // initial value at release
-    std::array<Param, 5>        params_;
+    std::array<Param, 6>        params_;
   };
 }
 

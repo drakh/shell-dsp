@@ -13,6 +13,7 @@
 #include "circular-panner.hh"
 #include "dsp.hh"
 #include "kicker.hh"
+#include "lpf.hh"
 #include "noiser.hh"
 #include "note.hh"
 #include "osc1.hh"
@@ -300,6 +301,12 @@ const DSSI_Descriptor *dssi_descriptor(unsigned long index)
       new shell::Stereizer<long double>(
         ctx,
         new shell::Noiser<long double>(ctx))),
+
+    /* filter: lpf */
+    new shell::DssiDescriptor<long double>(
+      new shell::Stereizer<long double>(
+        ctx,
+        new shell::Lpf<long double>(ctx))),
 
     /* filter: circular panner */
     new shell::DssiDescriptor<long double>(

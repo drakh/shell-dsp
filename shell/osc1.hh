@@ -2,7 +2,7 @@
 # define SHELL_OSC1_HH
 
 # include "dsp.hh"
-# include "adsr.hh"
+# include "ahdsr.hh"
 # include "osc.hh"
 # include "lfo.hh"
 # include "prefix-params.hh"
@@ -16,7 +16,7 @@ namespace shell
 
     Osc1(const Context<float_type> & ctx)
       : Dsp<float_type>(ctx),
-        adsr_(ctx),
+        ahdsr_(ctx),
         osc_(ctx),
         lfo_(ctx),
         lfo_params_(lfo_, "lfo:")
@@ -40,15 +40,15 @@ namespace shell
       if (index < osc_.paramCount())
         return osc_.param(index);
       index -= osc_.paramCount();
-      if (index < adsr_.paramCount())
-        return adsr_.param(index);
-      index -= adsr_.paramCount();
+      if (index < ahdsr_.paramCount())
+        return ahdsr_.param(index);
+      index -= ahdsr_.paramCount();
       return lfo_params_.param(index);
     }
 
     virtual uint32_t paramCount() const override
     {
-      return osc_.paramCount() + adsr_.paramCount() + lfo_.paramCount();
+      return osc_.paramCount() + ahdsr_.paramCount() + lfo_.paramCount();
     }
 
     virtual void noteOn(const SynthEvent & se) override
@@ -56,32 +56,32 @@ namespace shell
       // should I reset phase? osc_.setPhase(0);
       freq_ = se.freq;
       osc_.setFreq(freq_);
-      adsr_.noteOn();
+      ahdsr_.noteOn();
     }
 
     virtual void noteOff(const SynthEvent &) override
     {
-      adsr_.noteOff();
+      ahdsr_.noteOff();
     }
 
     virtual void step(const float_type * /*inputs*/,
                       float_type * outputs) override
     {
-      if (adsr_.state() == Adsr<float_type>::kIdle) {
+      if (ahdsr_.state() == Ahdsr<float_type>::kIdle) {
         outputs[0] = 0;
         return;
       }
 
       osc_.setFreq(freq_ * lfo_.step());
-      float_type wave = adsr_.step() * osc_.step();
+      float_type wave = ahdsr_.step() * osc_.step();
       outputs[0] = wave;
     }
 
-    Adsr<float_type> adsr_;     // envelope
-    Osc<float_type>  osc_;      // oscillator
-    Lfo<float_type>  lfo_;      // lfo
-    PrefixParams     lfo_params_;
-    float_type       freq_;
+    Ahdsr<float_type> ahdsr_;   // envelope
+    Osc<float_type>   osc_;     // oscillator
+    Lfo<float_type>   lfo_;     // lfo
+    PrefixParams      lfo_params_;
+    float_type        freq_;
   };
 }
 

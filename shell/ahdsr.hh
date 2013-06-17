@@ -1,5 +1,5 @@
-#ifndef SHELL_ADSR_HH
-# define SHELL_ADSR_HH
+#ifndef SHELL_AHDSR_HH
+# define SHELL_AHDSR_HH
 
 # include <cmath>
 # include <cstdint>
@@ -12,7 +12,7 @@
 namespace shell
 {
   template <typename float_type>
-  class Adsr
+  class Ahdsr
   {
   public:
 
@@ -24,12 +24,13 @@ namespace shell
     enum State {
       kIdle,
       kAttack,
+      kHold,
       kDecay,
       kSustain,
       kRelease,
     };
 
-    Adsr(const Context<float_type> & ctx)
+    Ahdsr(const Context<float_type> & ctx)
       : ctx_(ctx),
         state_(kIdle),
         curve_type_(kExp),
@@ -117,7 +118,7 @@ namespace shell
 
       case kAttack:
         if (step_ >= a_) {
-          state_ = kDecay;
+          state_ = kHold;
           step_  = 0;
           return step();
         }
@@ -126,9 +127,19 @@ namespace shell
         ++step_;
         return value;
 
+      case kHold:
+        if (step_ >= h_) {
+          state_ = kDecay;
+          step_  = 0;
+          return step();
+        }
+        ++step_;
+        return 1;
+
       case kDecay:
         if (step_ >= d_) {
           state_ = kSustain;
+          step_  = 0;
           return step();
         }
 
@@ -172,9 +183,19 @@ namespace shell
         ++step_;
         return value;
 
+      case kHold:
+        if (step_ >= h_) {
+          state_ = kDecay;
+          step_  = 0;
+          return step();
+        }
+        ++step_;
+        return 1;
+
       case kDecay:
         if (step_ >= d_) {
           state_ = kSustain;
+          step_  = 0;
           return step();
         }
 
@@ -219,6 +240,7 @@ namespace shell
     uint32_t                    step_;
     CurveType                   curve_type_;
     uint32_t                    a_; // duration in steps
+    uint32_t                    h_; // duration in steps
     uint32_t                    d_; // duration in steps
     float_type                  s_; // sustain level
     uint32_t                    r_; // duration in steps
@@ -227,4 +249,4 @@ namespace shell
   };
 }
 
-#endif /* !SHELL_ADSR_HH */
+#endif /* !SHELL_AHDSR_HH */

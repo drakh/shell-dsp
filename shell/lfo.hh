@@ -17,7 +17,7 @@ namespace shell
       params_[0].type_ = Param::kFloat;
       params_[0].scale_ = Param::kLinear;
       params_[0].min_ = 0;
-      params_[0].max_ = 20;
+      params_[0].max_ = 30;
       params_[0].name_ = "freq";
       params_[0].desc_ = "frequency";
       params_[0].get_ = [this] { return osc_.freq(); };

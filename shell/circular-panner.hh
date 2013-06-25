@@ -13,7 +13,17 @@ namespace shell
       : Dsp<float_type>(ctx),
         osc_(ctx)
     {
-      osc_.setFreq(1);
+      // freq
+      params_[0].type_ = Param::kFloat;
+      params_[0].scale_ = Param::kLinear;
+      params_[0].min_ = 0;
+      params_[0].max_ = 8;
+      params_[0].name_ = "freq";
+      params_[0].desc_ = "frequency";
+      params_[0].get_ = [this] { return osc_.freq(); };
+      params_[0].set_ = [this] (float v) { this->osc_.setFreq(v); };
+
+      osc_.setFreq(4);
     }
 
     virtual Dsp<float_type> *clone(const Context<float_type> & ctx) const override
@@ -30,12 +40,15 @@ namespace shell
 
     virtual Param & param(uint32_t index) override
     {
+      if (index < params_.size())
+        return params_.at(index);
+      index -= params_.size();
       return osc_.param(index);
     }
 
     virtual uint32_t paramCount() const override
     {
-      return osc_.paramCount();
+      return params_.size() + osc_.paramCount();
     }
 
     virtual void step(const float_type * inputs,
@@ -47,7 +60,8 @@ namespace shell
     }
 
   private:
-    Osc<float_type> osc_;
+    Osc<float_type>      osc_;
+    std::array<Param, 1> params_;
   };
 }
 

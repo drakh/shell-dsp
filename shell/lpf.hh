@@ -12,7 +12,7 @@ namespace shell
     Lpf(const Context<float_type> & ctx)
       : Dsp<float_type>(ctx),
         prev_(0),
-        cutoff_(0),
+        cut_(0),
         grow_(0)
     {
       // cutoff
@@ -22,10 +22,10 @@ namespace shell
       params_[0].max_   = 22500;
       params_[0].name_  = "cutoff";
       params_[0].desc_  = "Cutoff (Hz)";
-      params_[0].get_   = [this] { return this->cutoff_; };
+      params_[0].get_   = [this] { return this->cut_; };
       params_[0].set_   = [this] (float v) {
-        this->cutoff_ = v;
-        this->grow_ = std::exp(-this->ctx().pi_sr_ * this->cutoff_);
+        this->cut_ = v;
+        this->grow_ = std::exp(-this->ctx().pi_sr_ * this->cut_);
       };
       params_[0].set_(22500);
     }
@@ -62,7 +62,7 @@ namespace shell
   private:
     std::array<Param, 1> params_;
     float_type prev_;
-    float_type cutoff_;
+    float_type cut_;
     float_type grow_;
   };
 }

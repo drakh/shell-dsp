@@ -210,7 +210,7 @@ namespace shell
           return step();
         }
 
-        value = 1 - (1 - s_) * (1 - std::exp((-4 * float_type(step_)) / float_type(d_)));
+        value = s_ + (1 - s_) * std::exp((-5 * float_type(step_)) / float_type(d_));
         ++step_;
         return value;
 
@@ -222,7 +222,7 @@ namespace shell
           state_ = kIdle;
           return 0;
         }
-        value = r0_ * std::exp((-4 * float_type(step_)) / float_type(r_));
+        value = r0_ * std::exp((-5 * float_type(step_)) / float_type(r_));
         ++step_;
         return value;
 

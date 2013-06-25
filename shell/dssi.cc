@@ -14,6 +14,7 @@
 #include "dsp.hh"
 #include "kicker.hh"
 #include "lpf.hh"
+#include "lpf2.hh"
 #include "noiser.hh"
 #include "note.hh"
 #include "osc1.hh"
@@ -307,6 +308,12 @@ const DSSI_Descriptor *dssi_descriptor(unsigned long index)
       new shell::Stereizer<long double>(
         ctx,
         new shell::Lpf<long double>(ctx))),
+
+    /* filter: lpf2 */
+    new shell::DssiDescriptor<long double>(
+      new shell::Stereizer<long double>(
+        ctx,
+        new shell::Lpf2<long double>(ctx))),
 
     /* filter: circular panner */
     new shell::DssiDescriptor<long double>(

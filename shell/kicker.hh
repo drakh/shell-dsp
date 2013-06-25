@@ -30,7 +30,7 @@ namespace shell
       params_[0].max_ = 2000;
       params_[0].name_ = "f1";
       params_[0].desc_ = "frequency (hz)";
-      params_[0].get_ = [this] { return this->ctx_.stepToMs(this->f1_); };
+      params_[0].get_ = [this] { return this->f1_; };
       params_[0].set_ = [this] (float v) { this->f1_ = v; };
 
       // f2
@@ -40,7 +40,7 @@ namespace shell
       params_[1].max_ = 2000;
       params_[1].name_ = "f2";
       params_[1].desc_ = "frequency (hz)";
-      params_[1].get_ = [this] { return this->ctx_.stepToMs(this->f2_); };
+      params_[1].get_ = [this] { return this->f2_; };
       params_[1].set_ = [this] (float v) { this->f2_ = v; };
 
       // duration

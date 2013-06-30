@@ -73,8 +73,6 @@ namespace shell
     {
       left_->step(nullptr, outputs + 0);
       right_->step(nullptr, outputs + 1);
-      outputs[0] *= 0.2;
-      outputs[1] *= 0.7;
     }
 
   private:

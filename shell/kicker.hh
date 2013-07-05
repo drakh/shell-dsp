@@ -22,7 +22,7 @@ namespace shell
         step_(duration_ + 1),
         f1_(700),
         f2_(0),
-        distortion_(0)
+        distortion_(1)
     {
       // f1
       params_[0].type_ = Param::kInteger;
@@ -109,7 +109,7 @@ namespace shell
       osc_.setFreq(freq);
       float_type wave = osc_.step();
       float_type shape = exp(-5 * float_type(step_) / float_type(duration_));
-      float_type out =  wave * shape * distortion_;
+      float_type out = wave * shape * distortion_;
 
       if (out > 1)
         out = 1;

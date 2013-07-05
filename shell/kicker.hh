@@ -21,7 +21,8 @@ namespace shell
         duration_(ctx.sr_ / 4),
         step_(duration_ + 1),
         f1_(700),
-        f2_(0)
+        f2_(0),
+        distortion_(0)
     {
       // f1
       params_[0].type_ = Param::kInteger;
@@ -52,6 +53,16 @@ namespace shell
       params_[2].desc_ = "duration (ms)";
       params_[2].get_ = [this] { return this->ctx_.stepToMs(this->duration_); };
       params_[2].set_ = [this] (float v) { this->duration_ = this->ctx_.msToStep(v); };
+
+      // distortion
+      params_[3].type_ = Param::kFloat;
+      params_[3].scale_ = Param::kLinear;
+      params_[3].min_ = 0;
+      params_[3].max_ = 1;
+      params_[3].name_ = "distortion";
+      params_[3].desc_ = "distortion";
+      params_[3].get_ = [this] { return (this->distortion_ - 1) / 20; };
+      params_[3].set_ = [this] (float v) { this->distortion_ = v * 20 + 1; };
     }
 
     virtual Dsp<float_type> *clone(const Context<float_type> & ctx) const override
@@ -98,7 +109,12 @@ namespace shell
       osc_.setFreq(freq);
       float_type wave = osc_.step();
       float_type shape = exp(-5 * float_type(step_) / float_type(duration_));
-      float_type out =  wave * shape;
+      float_type out =  wave * shape * distortion_;
+
+      if (out > 1)
+        out = 1;
+      else if (out < -1)
+        out = -1;
 
       output[0] = out;
       ++step_;
@@ -110,7 +126,8 @@ namespace shell
     uint32_t                    step_;  // the step since start();
     float_type                  f1_;
     float_type                  f2_;
-    std::array<Param, 3>        params_;
+    float_type                  distortion_;
+    std::array<Param, 4>        params_;
   };
 }
 
